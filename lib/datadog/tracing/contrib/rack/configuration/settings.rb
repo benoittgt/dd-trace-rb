@@ -37,6 +37,7 @@ module Datadog
             option :distributed_tracing, default: true, type: :bool
             option :headers, default: DEFAULT_HEADERS, type: :hash
             option :middleware_names, default: false, type: :bool
+            option :ignored_exceptions, default: [], type: :array # use default as constant
             option :quantize, default: {}, type: :hash
             option :request_queuing do |o|
               o.default false

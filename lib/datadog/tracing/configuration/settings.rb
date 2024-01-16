@@ -1,4 +1,5 @@
 require_relative '../../tracing/configuration/ext'
+require_relative '../../tracing/ignored_exception'
 require_relative '../../core/environment/variable_helpers'
 require_relative 'http'
 
@@ -188,6 +189,19 @@ module Datadog
                 o.type :array
                 o.default []
                 o.setter { |header_tags, _| Configuration::HTTP::HeaderTags.new(header_tags) }
+              end
+
+              # Comma-separated, list of exception class names that should not be reported.
+              #
+              # Constants are evaluated at runtime, so it will break on misspelled constants.
+              #
+              # @default `DD_TRACE_IGNORED_EXCEPTIONS` environment variable, otherwise an list of default ignored exceptions
+              # @return [Array<Constant>]
+              option :ignored_exceptions do |o|
+                o.env Configuration::Ext::ENV_IGNORED_EXCEPTIONS
+                o.type :array
+                o.default []
+                o.setter { |ignored_exceptions, _| Datadog::Tracing::IgnoredException.constants_resolve(ignored_exceptions) }
               end
 
               # Enable 128 bit trace id generation.

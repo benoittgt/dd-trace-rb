@@ -234,6 +234,8 @@ module Datadog
 
             # detect if the status code is a 5xx and flag the request span as an error
             # unless it has been already set by the underlying framework
+            # TODO: Deal with ignored exceptions
+            # Mark in rack payload that issue has been ignored earlier by ddtrace
             request_span.status = 1 if status.to_s.start_with?('5') && request_span.status.zero?
           end
           # rubocop:enable Metrics/AbcSize

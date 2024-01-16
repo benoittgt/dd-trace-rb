@@ -67,6 +67,7 @@ module Datadog
 
             option :middleware, default: true, type: :bool
             option :middleware_names, default: false, type: :bool
+            option :ignored_exceptions, default: [], type: :array # use default as constant
             option :template_base_path do |o|
               o.type :string
               o.default 'views/'

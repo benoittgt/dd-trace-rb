@@ -163,9 +163,65 @@ RSpec.describe 'Rails middleware' do
       end
     end
 
+    context 'that do not raises because error is ignored' do
+      before do
+        Datadog.configure do |c|
+          c.tracing.ignored_exceptions = ['CustomError']
+          c.tracing.instrument :rails, rails_options
+        end
+
+        get '/'
+      end
+
+      let(:rails_middleware) { [middleware] }
+      let(:middleware) do
+        stub_const(
+          'RaiseActiveRecordRecordInvalidMiddleware',
+          Class.new do
+            def initialize(app)
+              @app = app
+            end
+
+            def call(env)
+              @app.call(env)
+              raise ActiveRecord::RecordInvalid, 'Boom!'
+            end
+          end
+        )
+      end
+
+      it do
+        expect(app).to have_kind_of_middleware(middleware)
+        expect(last_response).to be_server_error
+        expect(spans).to have_at_least(2).items
+      end
+
+      context 'rack span' do
+        subject(:span) { spans.find { |s| s.name == 'rack.request' } }
+
+        it do
+          expect(trace.resource).to eq('TestController#index')
+
+          expect(span.name).to eq('rack.request')
+          expect(span.span_type).to eq('web')
+          expect(span.resource).to eq('TestController#index')
+          expect(span.get_tag('http.url')).to eq('/')
+          expect(span.get_tag('http.method')).to eq('GET')
+          expect(span.get_tag('http.status_code')).to eq('500')
+
+          expect(span.get_tag('error.type')).to be nil
+          expect(span.get_tag('error.message')).to be nil
+          pp span
+          expect(span).to_not have_error
+          expect(span.get_tag('error.stack')).to be nil
+        end
+      end
+    end
+
     context 'that raises a known NotFound exception' do
       before { get '/' }
 
+      let(:rails_options) { super().merge!(ignored_exceptions: [ActionController::RoutingError]) }
       let(:rails_middleware) { [middleware] }
       let(:middleware) do
         stub_const(
