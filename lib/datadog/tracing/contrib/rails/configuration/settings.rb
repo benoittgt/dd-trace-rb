@@ -50,6 +50,14 @@ module Datadog
 
             option :distributed_tracing, default: true, type: :bool
 
+            option :default_ignored_exceptions do |o|
+              o.type :array
+              o.default ['ActionController::RoutingError']
+              o.after_set do |value|
+                Datadog.configuration.tracing[:ignored_exceptions] << value
+              end
+            end
+
             option :request_queuing do |o|
               o.default false
             end
@@ -67,7 +75,6 @@ module Datadog
 
             option :middleware, default: true, type: :bool
             option :middleware_names, default: false, type: :bool
-            option :ignored_exceptions, default: [], type: :array # use default as constant
             option :template_base_path do |o|
               o.type :string
               o.default 'views/'

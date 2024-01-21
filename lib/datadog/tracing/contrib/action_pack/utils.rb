@@ -7,7 +7,7 @@ module Datadog
         # Common utilities for ActionPack
         module Utils
           def self.exception_is_error?(exception)
-            !!defined?(::ActionDispatch::ExceptionWrapper) && IgnoredException.ignored?(exception)
+            !!defined?(::ActionDispatch::ExceptionWrapper) && !IgnoredExceptionHandler.ignored?(exception)
           end
 
           def self.set_analytics_sample_rate(span)

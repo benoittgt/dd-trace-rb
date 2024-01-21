@@ -2,8 +2,8 @@
 
 module Datadog
   module Tracing
-    # TODO
-    module IgnoredException
+    # TODO: Document
+    module IgnoredExceptionHandler
       def self.constant_resolve(constant_name)
         constant_name = constant_name.to_s unless constant_name.is_a?(String)
         Object.const_get(constant_name)

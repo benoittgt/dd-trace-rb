@@ -163,10 +163,10 @@ RSpec.describe 'Rails middleware' do
       end
     end
 
-    context 'that do not raises because error is ignored' do
+    context 'that do not raises because error is ignored'  do
       before do
         Datadog.configure do |c|
-          c.tracing.ignored_exceptions = ['CustomError']
+          c.tracing.ignored_exceptions = ['ActionController::UnknownFormat']
           c.tracing.instrument :rails, rails_options
         end
 
@@ -184,7 +184,7 @@ RSpec.describe 'Rails middleware' do
 
             def call(env)
               @app.call(env)
-              raise ActiveRecord::RecordInvalid, 'Boom!'
+              raise ActionController::UnknownFormat, '/unkwon format'
             end
           end
         )
@@ -192,7 +192,7 @@ RSpec.describe 'Rails middleware' do
 
       it do
         expect(app).to have_kind_of_middleware(middleware)
-        expect(last_response).to be_server_error
+        expect(last_response).to be_client_error
         expect(spans).to have_at_least(2).items
       end
 
@@ -207,21 +207,19 @@ RSpec.describe 'Rails middleware' do
           expect(span.resource).to eq('TestController#index')
           expect(span.get_tag('http.url')).to eq('/')
           expect(span.get_tag('http.method')).to eq('GET')
-          expect(span.get_tag('http.status_code')).to eq('500')
+          expect(span.get_tag('http.status_code')).to eq('406')
 
           expect(span.get_tag('error.type')).to be nil
           expect(span.get_tag('error.message')).to be nil
-          pp span
           expect(span).to_not have_error
           expect(span.get_tag('error.stack')).to be nil
         end
       end
     end
 
-    context 'that raises a known NotFound exception' do
+    context 'that raises a known NotFound exception but error is ignored by default' do
       before { get '/' }
 
-      let(:rails_options) { super().merge!(ignored_exceptions: [ActionController::RoutingError]) }
       let(:rails_middleware) { [middleware] }
       let(:middleware) do
         stub_const(
@@ -353,7 +351,7 @@ RSpec.describe 'Rails middleware' do
           expect(spans).to have_at_least(2).items
         end
 
-        context 'rack span' do
+        context 'rack span', :focus do
           subject(:span) { spans.first }
 
           it do
